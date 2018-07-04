@@ -345,10 +345,10 @@ class SubforceAutoCheckoutEventListener(sublime_plugin.EventListener):
 
 class SubforceStatusUpdatingEventListener(sublime_plugin.EventListener):
    # Some of these may be redundant. Meh.
-   def on_activated(self, view):
+   def on_activated_async(self, view):
       self.updateStatus(view)
 
-   def on_deactivated(self, view):
+   def on_deactivated_async(self, view):
       self.updateStatus(view)
 
    def on_post_window_command(self, window, commandName, args):
