@@ -611,12 +611,31 @@ def executeP4VCCommand(command, *args):
       if stderr:
          print(stderr)
 
+def executeP4VCommand(command, *args):
+   # See: https://www.perforce.com/blog/vcs/p4v-secrets-calling-p4v-command-line
+   with PerforceWrapper() as p4:
+      command = 'p4v.exe -p {} -c {} -u {} -cmd "{}"'.format(
+         p4.port,
+         p4.client,
+         p4.user,
+         ' '.join([command] + list(args))
+      )
+      print("Subforce: executing p4v command '{}'".format(command))
+      process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd=p4.cwd)
+
+class SubforceViewRevisionHistoryCommand(sublime_plugin.WindowCommand):
+   def run(self, paths=[]):
+      paths = coercePathsToActiveViewIfNeeded(paths, self.window)
+
+      for path in paths:
+         executeP4VCommand("history", path)
+
 class SubforceViewTimelapseCommand(sublime_plugin.WindowCommand):
    def run(self, paths=[]):
       paths = coercePathsToActiveViewIfNeeded(paths, self.window)
 
       for path in paths:
-         executeP4VCCommand("timelapseview", path)
+         executeP4VCommand("annotate", path)
 
 class SubforceSubmitChangelistCommand(sublime_plugin.WindowCommand):
    def run(self):

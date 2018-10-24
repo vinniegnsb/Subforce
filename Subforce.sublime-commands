@@ -12,6 +12,7 @@
     { "caption": "Subforce: Delete Changelist", "command": "subforce_delete_changelist" },
     { "caption": "Subforce: Move to Changelist", "command": "subforce_move_to_changelist" },
     { "caption": "Subforce: Revert Files in Changelist", "command": "subforce_revert_files_in_changelist" },
+    { "caption": "Subforce: View Revision History", "command": "subforce_view_revision_history" },
     { "caption": "Subforce: View Timelapse", "command": "subforce_view_timelapse" },
     { "caption": "Subforce: Submit Changelist", "command": "subforce_submit_changelist" },
     { "caption": "Subforce: Resolve File", "command": "subforce_resolve" },

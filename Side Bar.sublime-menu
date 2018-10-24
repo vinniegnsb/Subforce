@@ -86,6 +86,16 @@
                 }
             },
             {
+                "caption": "View Revision History",
+                "mnemonic": "H",
+                "id": "subforce-view-revision-history",
+                "command": "subforce_view_revision_history",
+                "args":
+                {
+                    "paths": []
+                }
+            },
+            {
                 "caption": "View Timelapse",
                 "mnemonic": "T",
                 "id": "subforce-view-timelapse",
