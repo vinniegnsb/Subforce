@@ -139,6 +139,18 @@ class PerforceWrapper(object):
 
       return noErrors
 
+   def pathUnderRoot(self, path):
+      try:
+         stat = self._p4.run_fstat(path)
+         # Sometimes an empty array is returned instead of an exception
+         if stat:
+            return True
+         else:
+            return False
+      except P4.P4Exception:
+         return False
+
+
 def plugin_loaded():
    print("Subforce: plugin loaded!")
 
@@ -295,14 +307,11 @@ class SubforceAutoCheckoutEventListener(sublime_plugin.EventListener):
             settings.get(FILE_CHECKED_OUT_SETTING_KEY, False):
             return
 
-         try:
-            stat = p4.run_fstat(fileName) # check if file is in depot
-            if "action" in stat[0]:
-               # Cache this setting, so we don't run fstat unnecessarily
-               settings.set(FILE_CHECKED_OUT_SETTING_KEY, True)
-               return
-         except:
-            raise
+         # check if file is in depot
+         if p4.pathUnderRoot(fileName):
+            # Cache this setting, so we don't run fstat unnecessarily
+            settings.set(FILE_CHECKED_OUT_SETTING_KEY, True)
+         else:
             # More caching!
             settings.set(FILE_NOT_IN_DEPOT_SETTING_KEY, True)
             return
@@ -360,8 +369,11 @@ class SubforceStatusUpdatingEventListener(sublime_plugin.EventListener):
       settings = view.settings()
       try:
          with PerforceWrapper(squelchErrorAndWarninMessages=True) as p4:
-            stat = p4.run_fstat(view.file_name())  # check if file is in depot
-            if stat:
+            stat = None 
+            
+            # check if file is in depot
+            if p4.pathUnderRoot(view.file_name()):
+               stat = p4.run_fstat(view.file_name())
                stat = stat[0]
             else:
                return
@@ -509,8 +521,7 @@ class SubforceRenameCommand(sublime_plugin.WindowCommand):
             return
          path = ellipsizeIfDirectory(path)
 
-         stat = p4.run_fstat(path)
-         if 'action' not in stat[0]:
+         if not p4.pathUnderRoot(path):
             requiresCheckout = True
          else:
             requiresCheckout = False
