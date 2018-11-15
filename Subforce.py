@@ -311,6 +311,7 @@ class SubforceAutoCheckoutEventListener(sublime_plugin.EventListener):
          if p4.pathUnderRoot(fileName):
             # Cache this setting, so we don't run fstat unnecessarily
             settings.set(FILE_CHECKED_OUT_SETTING_KEY, True)
+            return
          else:
             # More caching!
             settings.set(FILE_NOT_IN_DEPOT_SETTING_KEY, True)
