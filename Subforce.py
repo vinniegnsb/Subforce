@@ -226,16 +226,21 @@ class ChangelistManager(object):
 
          changelists.extend(p4.run_changes("-c", p4.client, "-s", "pending", "-l"))
 
+         def onCreatedChangelist(number):
+            if onDoneCallback and number:
+               onDoneCallback(number)
+            SubforceStatusUpdatingEventListener.updateStatus(self._window.active_view())
+
          def onDone(selectedIndex):
             self._changelistDescriptionOutputPanel.hide()
             selectedChangelistNumber = changelists[selectedIndex]['change'] if selectedIndex >= 0 else None
 
             if selectedChangelistNumber == NEW_CHANGELIST_NAME:
-               selectedChangelistNumber = self.createChangelist()
-
-            if onDoneCallback and selectedChangelistNumber:
-               onDoneCallback(selectedChangelistNumber)
-            SubforceStatusUpdatingEventListener.updateStatus(self._window.active_view())
+               self.createChangelist(onCreatedChangelist)
+            else:
+               if onDoneCallback and selectedChangelistNumber:
+                  onDoneCallback(selectedChangelistNumber)
+               SubforceStatusUpdatingEventListener.updateStatus(self._window.active_view())
 
          def onHighlighted(selectedIndex):
             self._changelistDescriptionOutputPanel.show(changelists[selectedIndex]['desc'])
@@ -250,21 +255,49 @@ class ChangelistManager(object):
             onHighlighted
          )
 
-   def createChangelist(self):
-      return self.editChangelist(None)
+   def createChangelist(self, onDoneCallback=None):
+      return self.editChangelist(None, onDoneCallback)
 
-   def editChangelist(self, changelistNumber):
+   def editChangelist(self, changelistNumber, onDoneCallback=None):
       with self._perforceWrapper as p4:
+         
+         caption = 'New Changelist Description'
+         description = '<new changelist>'
+
          if changelistNumber:
-            changeResult = p4.run_change(changelistNumber)[0]
-         else: # create a new changelist
-            changeResult = p4.run_change()[0]
+            changeResult = p4.fetch_change(changelistNumber)
+            caption = 'Changelist {} Description'.format(changelistNumber)
+            description = changeResult['Description'].strip()
+         
+         def onDescriptionEntered(desc):
+            with self._perforceWrapper as p4:
+               if changelistNumber:
+                  changeResult = p4.fetch_change(changelistNumber)
+                  changeResult['Description'] = desc
+                  changeResult = p4.save_change(changeResult)[0]
+               else:
+                  changeResult = p4.fetch_change()
+                  changeResult['Description'] = desc
+                  changeResult['Files'] = []
+                  changeResult = p4.save_change(changeResult)[0]
+               
+               changeResultRE = r'Change (\d+) (updated|created).'
+               changeResultMatch = re.match(changeResultRE, changeResult)
+               assert changeResultMatch and changeResultMatch.group(1).isdigit()
+               newChangeNumber = changeResultMatch.group(1)
 
-         changeResultRE = r'Change (\d+) (updated|created).'
-         changeResultMatch = re.match(changeResultRE, changeResult)
-         assert changeResultMatch and changeResultMatch.group(1).isdigit()
+               if onDoneCallback:
+                  onDoneCallback(newChangeNumber)
 
-         return changeResultMatch.group(1)
+               if changelistNumber:
+                  self._window.status_message('Edited changelist ' +
+                                              newChangeNumber)
+               else:
+                  self._window.status_message('Created new changelist ' + 
+                                              newChangeNumber)
+
+         self._window.show_input_panel(caption, description,
+                                       onDescriptionEntered, None, None)
 
    def deleteChangelist(self, changelistNumber):
       with self._perforceWrapper as p4:
