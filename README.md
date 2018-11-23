@@ -30,6 +30,7 @@ Refer to the [Sublime's Settings documentation](https://www.sublimetext.com/docs
 * Rename - rename a single file or folder.
 * Move to Changelist - move one or more files or folders to a specified changelist (including a new changelist).
 * View Timelapse - open the Time-lapse GUI for a single file.
+* View Revision History - open the revision history of a single file.
 * Resolve - resolve one or more files using the Resolve GUI.
 * View Graphical Diff of Workspace - diff a single file against a depot revision using the P4Merge GUI.
 * View Graphical Diff of Depot Revisions - diff two depot revisions of a single file using the P4Merge GUI.
