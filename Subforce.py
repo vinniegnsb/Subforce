@@ -309,9 +309,13 @@ class SubforceAutoCheckoutEventListener(sublime_plugin.EventListener):
 
          # check if file is in depot
          if p4.pathUnderRoot(fileName):
-            # Cache this setting, so we don't run fstat unnecessarily
-            settings.set(FILE_CHECKED_OUT_SETTING_KEY, True)
-            return
+            stat = p4.run_fstat(fileName)
+            
+            # check if file is already checked out
+            if len(stat) > 0 and 'action' in stat[0]:
+               # Cache this setting, so we don't run fstat unnecessarily
+               settings.set(FILE_CHECKED_OUT_SETTING_KEY, True)
+               return
          else:
             # More caching!
             settings.set(FILE_NOT_IN_DEPOT_SETTING_KEY, True)
