@@ -44,6 +44,8 @@ CONNECTION_INFO_USER_SETTINGS_KEY = 'connection_info_user'
 CONNECTION_INFO_CLIENT_SETTINGS_KEY = 'connection_info_client'
 DISABLE_AUTO_CHECKOUT_SETTINGS_KEY = 'disable_auto_checkout'
 
+DIFF_TOOL_SETTINGS_KEY = 'diff_tool'
+
 class SettingsWrapper(object):
    def __init__(self):
       self._settings = sublime.load_settings("Subforce.sublime-settings")
@@ -64,6 +66,15 @@ class PerforceWrapper(object):
 
       currentWorkingDirectorySetting = self._settings.get(CURRENT_WORKING_DIRECTORY_SETTING_KEY, None)
       projectPath = sublime.active_window().extract_variables()['folder']
+
+      # If multiple folders are open in project, then select the one that matches root of open file
+      folder_list = sublime.Window(sublime.active_window().id()).folders()
+      for x in folder_list:
+         # Have to capitalize since drive letters are not always the same case for whatever reason
+         if x.capitalize() in sublime.active_window().extract_variables()['file_path'].capitalize():
+            projectPath = x
+            break
+      
       self._p4.cwd = currentWorkingDirectorySetting if currentWorkingDirectorySetting else projectPath
 
       self._p4.exception_level = 1 # Only errors are raised as exceptions. Warnings are accessed through p4.warnings
@@ -651,7 +662,7 @@ class SubforceRevertFilesInChangelistCommand(sublime_plugin.WindowCommand):
 
 def executeP4VCCommand(command, *args):
    with PerforceWrapper() as p4:
-      command = " ".join(["p4vc.exe", command] + list(args))
+      command = " ".join(["p4v.exe -p4vc", command] + list(args))
       print("Subforce: executing p4vc command '{}'".format(command))
       process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd=p4.cwd)
       stdout, stderr = process.communicate()
@@ -660,31 +671,22 @@ def executeP4VCCommand(command, *args):
       if stderr:
          print(stderr)
 
-def executeP4VCommand(command, *args):
-   # See: https://www.perforce.com/blog/vcs/p4v-secrets-calling-p4v-command-line
-   with PerforceWrapper() as p4:
-      command = 'p4v.exe -p {} -c {} -u {} -cmd "{}"'.format(
-         p4.port,
-         p4.client,
-         p4.user,
-         ' '.join([command] + list(args))
-      )
-      print("Subforce: executing p4v command '{}'".format(command))
-      process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd=p4.cwd)
-
 class SubforceViewRevisionHistoryCommand(sublime_plugin.WindowCommand):
    def run(self, paths=[]):
       paths = coercePathsToActiveViewIfNeeded(paths, self.window)
 
-      for path in paths:
-         executeP4VCommand("history", path)
+      perforceWrapper = PerforceWrapper()
+
+      with perforceWrapper as p4:
+         for path in paths:
+         	executeP4VCCommand("-c", p4.client, "history", path)
 
 class SubforceViewTimelapseCommand(sublime_plugin.WindowCommand):
    def run(self, paths=[]):
       paths = coercePathsToActiveViewIfNeeded(paths, self.window)
 
       for path in paths:
-         executeP4VCommand("annotate", path)
+         executeP4VCCommand("timelapseview", path)
 
 class SubforceSubmitChangelistCommand(sublime_plugin.WindowCommand):
    def run(self):
@@ -715,12 +717,23 @@ class RevisionManager:
          depotFilePath = p4.run_fstat(file)[0]['depotFile']
 
          temporaryDepotFilePath = self._createTemporaryDepotFile(depotFilePath, revision)
-         self._startP4MergeThread(
-            temporaryDepotFilePath,
-            file,
-            getRevisionQualifiedDepotPath(depotFilePath, revision),
-            "{} (workspace file)".format(file)
-         )
+         
+         if SettingsWrapper().get(DIFF_TOOL_SETTINGS_KEY) == "meld":
+            print("meld")
+            self._startMeldThread(
+               temporaryDepotFilePath,
+               file,
+               getRevisionQualifiedDepotPath(depotFilePath, revision),
+               "{} (workspace file)".format(file)
+            )
+         else:
+            print("p4merge")
+            self._startP4MergeThread(
+               temporaryDepotFilePath,
+               file,
+               getRevisionQualifiedDepotPath(depotFilePath, revision),
+               "{} (workspace file)".format(file)
+            )
 
    def diffDepotRevisions(self, revision1, revision2, file):
       with self._perforceWrapper as p4:
@@ -785,6 +798,18 @@ class RevisionManager:
    def _startP4MergeThread(self, leftFile, rightFile, leftFileAlias, rightFileAlias):
       def target():
          command = ["p4merge.exe", '-nl', leftFileAlias, '-nr', rightFileAlias, leftFile, rightFile]
+         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+         stdout, stderr = process.communicate()
+         if stdout:
+            print(stdout)
+         if stderr:
+            print(stderr)
+
+      threading.Thread(target=target).start()
+
+   def _startMeldThread(self, leftFile, rightFile, leftFileAlias, rightFileAlias):
+      def target():
+         command = ["meld", "-L", leftFileAlias, "-L", rightFileAlias, leftFile, rightFile]
          process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
          stdout, stderr = process.communicate()
          if stdout:
