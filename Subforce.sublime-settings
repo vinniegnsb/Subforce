@@ -20,5 +20,8 @@
 
    // Disables the Auto-Checkout-On-Save feature.
    "disable_auto_checkout": false
+   
+   // Uncomment to set the diff tool to meld
+   // "diff_tool": "meld"
 
 }
