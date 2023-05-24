@@ -1,0 +1,36 @@
+[
+    {
+        "caption": "Preferences",
+        "id": "preferences",
+        "children":
+        [
+            {
+                "caption": "Package Settings",
+                "id": "package-settings",
+                "children":
+                [
+                    {
+                        "caption": "Subforce",
+                        "children":
+                        [
+                            {
+                                "command": "open_file",
+                                "args": {"file": "${packages}/Subforce/README.md"},
+                                "caption": "README"
+                            },
+                            { "caption": "-" },
+                            {
+                                "caption": "Settings",
+                                "command": "edit_settings", "args":
+                                {
+                                    "base_file": "${packages}/Subforce/Subforce.sublime-settings",
+                                    "default": ""
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]
