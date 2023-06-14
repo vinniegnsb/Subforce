@@ -72,11 +72,16 @@ class PerforceWrapper(object):
       # Have to capitalize since drive letters are not always the same case for whatever reason
       directory_list = [folder.capitalize() + "\\" for folder in folder_list]
       current_directory = sublime.active_window().extract_variables()['file_path'].capitalize() + "\\"
+
+      current_client = ""
       
       for x in directory_list:
          if x in current_directory:
             projectPath = x
+            current_client = x.strip("\\").rsplit("\\", 1)[-1]
             break
+      
+      self._p4.client = current_client
       
       self._p4.cwd = currentWorkingDirectorySetting if currentWorkingDirectorySetting else projectPath
 
