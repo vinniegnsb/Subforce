@@ -12,6 +12,13 @@ Alternatively, you can manually clone this repository directly to your Sublime T
 
 Note: you will also need to manually clone the [SublimeP4Python](https://github.com/MrElusive/SublimeP4Python) dependency.
 
+## Setup
+
+Clear the P4CLIENT key to be none from the command line with 
+
+    $ p4 set P4CLIENT= 
+
+Set any necessary keys including P4USER, P4PORT, P4PASSWD, etc. This can either be done globally, with p4 set, or under the plugin settings. If done in plugin settings, the client must be specified as well, which only allows using one client at a time.
 
 ## Settings
 
