@@ -69,7 +69,8 @@ class PerforceWrapper(object):
 
       # If multiple folders are open in project, then select the one that matches root of open file
       folder_list = sublime.Window(sublime.active_window().id()).folders()
-      for x in folder_list:
+      directory_list = [folder + "\\" for folder in folder_list]
+      for x in directory_list:
          # Have to capitalize since drive letters are not always the same case for whatever reason
          if x.capitalize() in sublime.active_window().extract_variables()['file_path'].capitalize():
             projectPath = x
