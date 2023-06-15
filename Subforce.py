@@ -672,7 +672,7 @@ def executeP4VCCommand(command, *args):
    with PerforceWrapper() as p4:
       command = " ".join(["p4v.exe -p4vc", command] + list(args))
       print("Subforce: executing p4vc command '{}'".format(command))
-      process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd=p4.cwd)
+      process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=p4.cwd)
       stdout, stderr = process.communicate()
       if stdout:
          print(stdout)
@@ -693,8 +693,11 @@ class SubforceViewTimelapseCommand(sublime_plugin.WindowCommand):
    def run(self, paths=[]):
       paths = coercePathsToActiveViewIfNeeded(paths, self.window)
 
-      for path in paths:
-         executeP4VCCommand("timelapseview", path)
+      perforceWrapper = PerforceWrapper()
+
+      with perforceWrapper as p4:
+         for path in paths:
+            executeP4VCCommand("-c", p4.client, "timelapseview", path)
 
 class SubforceSubmitChangelistCommand(sublime_plugin.WindowCommand):
    def run(self):
